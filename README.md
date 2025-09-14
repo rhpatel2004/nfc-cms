@@ -27,7 +27,7 @@ This project is built using a modern and scalable stack:
   * **Styling:** [Tailwind CSS](https://tailwindcss.com/)
   * **Components:** [Shadcn UI](https://ui.shadcn.com/)
   * **Backend:** Next.js API Routes
-  * **Database:** (To be implemented) [Prisma](https://www.prisma.io/)
+  * **Database:** (To be implemented)
 
 -----
 
@@ -87,5 +87,4 @@ The project uses the Next.js App Router for a clean and scalable structure.
 
   * **Database Integration:** Implement a database (likely with Prisma) to store content pages, tag data, and analytics.
   * **Content Modules:** Expand the library of pre-built page components (e.g., forms, galleries).
-  * **Multi-language Support:** Add the ability to create and manage content in multiple languages.
   * **API Integrations:** Build a REST API for third-party systems to interact with the CMS.
