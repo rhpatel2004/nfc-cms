@@ -27,7 +27,7 @@ This project is built using a modern and scalable stack:
   * **Styling:** [Tailwind CSS](https://tailwindcss.com/)
   * **Components:** [Shadcn UI](https://ui.shadcn.com/)
   * **Backend:** Next.js API Routes
-  * **Database:** (To be implemented)
+  * **Database:** MySql Workbench
 
 -----
 
