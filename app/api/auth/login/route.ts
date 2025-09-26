@@ -1,10 +1,11 @@
 // app/api/auth/login/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
-import db, { UserAttributes } from '@/lib/db'; // Correctly import UserAttributes
+import db, { initializeDatabase } from '@/lib/db';
 import { Model } from 'sequelize';
 
 export async function POST(req: NextRequest) {
+  await initializeDatabase();
   try {
     const { email, password } = await req.json();
     if (!email || !password) {
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Find the user and tell TypeScript it's a Model with our attributes
-    const user: Model<UserAttributes, any> | null = await db.User.findOne({ where: { email } });
+    const user: Model<any> | null = await db.User.findOne({ where: { email } });
     if (!user) {
       return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
     }

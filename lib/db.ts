@@ -2,15 +2,17 @@ import { Sequelize } from 'sequelize';
 import { sequelize } from './sequelize'; 
 import { User } from './models/User';
 import { Page } from './models/Page';
+import { NfcTag } from './models/NfcTag';
 
 const db = {
   sequelize,
   Sequelize,
   User,
   Page,
+  NfcTag,
 };
 
-async function initializeDatabase() {
+export async function initializeDatabase() {
   try {
     await db.sequelize.authenticate();
     await db.sequelize.sync(); 
@@ -20,6 +22,5 @@ async function initializeDatabase() {
   }
 }
 
-initializeDatabase();
 
 export default db;
