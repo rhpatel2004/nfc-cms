@@ -1,76 +1,59 @@
-// lib/db.ts
-import { Sequelize, DataTypes, Model } from 'sequelize';
-import dotenv from 'dotenv';
+import { Sequelize } from 'sequelize';
 import mysql2 from 'mysql2';
 
-dotenv.config();
+// 1. Import the MODEL CLASSES directly from their files
+import User from './model/user';
+import ContentPage from './model/ContentPage';
+import NfcTag from './model/NfcTags';
+import TagAssignment from './model/TagAssignment';
+import Analytics from './model/Analytics';
 
-// Define the database connection first
-const sequelize = new Sequelize(
-  process.env.DB_NAME!,
-  process.env.DB_USER!,
-  process.env.DB_PASSWORD!,
-  {
-    host: process.env.DB_HOST!,
-    port: parseInt(process.env.DB_PORT!, 10),
-    dialect: 'mysql',
-    dialectModule: mysql2,
-  }
-);
+let sequelizeInstance: Sequelize | null = null;
 
-// Export the UserAttributes interface so it can be used in other files
-export interface UserAttributes {
-  id: number;
-  name: string;
-  email: string;
-  passwordHash: string;
-}
+const connectAndSyncDb = async () => {
+    if (sequelizeInstance) {
+        return sequelizeInstance;
+    }
 
-// Define the User model after the Sequelize connection is established
-// Use the UserAttributes interface to tell TypeScript the model's structure
-class User extends Model<UserAttributes, any> {}
+    const dbName = process.env.DB_NAME!;
+    const dbUser = process.env.DB_USER!;
+    const dbPass = process.env.DB_PASSWORD;
+    const dbHost = process.env.DB_HOST!;
 
-User.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-    },
-    passwordHash: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-  },
-  {
-    sequelize,
-    modelName: 'User',
-    tableName: 'Users',
-    timestamps: true,
-  }
-);
+    const sequelize = new Sequelize(dbName, dbUser, dbPass, {
+        host: dbHost,
+        dialect: 'mysql',
+        dialectModule: mysql2, // The definitive fix for the bundler issue
+        logging: false,
+    });
 
-interface DbType {
-  sequelize: Sequelize;
-  Sequelize: typeof Sequelize;
-  User: typeof User;
-}
+    // --- 2. INITIALIZE ALL MODELS ---
+    // This calls the static .initialize() method on each model class.
+    // This replaces the old "defineUser(sequelize)" calls.
+    User.initialize(sequelize);
+    ContentPage.initialize(sequelize);
+    NfcTag.initialize(sequelize);
+    TagAssignment.initialize(sequelize);
+    Analytics.initialize(sequelize);
 
-const db: DbType = {} as DbType;
+    // --- 3. APPLY ASSOCIATIONS ---
+    // Now that the models are proper classes, TypeScript understands .hasMany(), etc.
+    User.hasMany(ContentPage, { foreignKey: 'authorId', as: 'pages' });
+    ContentPage.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-db.User = User;
+    ContentPage.belongsToMany(NfcTag, { through: TagAssignment, foreignKey: 'pageId', as: 'tags' });
+    NfcTag.belongsToMany(ContentPage, { through: TagAssignment, foreignKey: 'tagId', as: 'pages' });
 
-sequelize.sync();
+    NfcTag.hasMany(Analytics, { foreignKey: 'tagId', as: 'taps' });
+    Analytics.belongsTo(NfcTag, { foreignKey: 'tagId', as: 'tag' });
+    console.log('✅ Model associations have been applied.');
+    
+    // --- 4. SYNC DATABASE ---
+    await sequelize.sync({ alter: true });
+    
+    sequelizeInstance = sequelize;
+    return sequelizeInstance;
+};
 
-export default db;
+export default connectAndSyncDb;
+
