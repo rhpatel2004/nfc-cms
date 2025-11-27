@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcrypt';
 import db, { initializeDatabase } from '@/lib/db';
+import bcrypt from 'bcrypt';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   await initializeDatabase();
@@ -19,12 +19,6 @@ export async function POST(req: NextRequest) {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    const newUser = await db.User.create({
-      name,
-      email,
-      passwordHash,
-      accessRole: 'Editor', // Default role for new users
-    });
 
     return NextResponse.json({ message: 'User registered successfully.' }, { status: 201 });
   } catch (error) {

@@ -13,11 +13,11 @@ export default function RegisterPage() {
   const [message, setMessage] = useState({ text: '', color: '' });
   const router = useRouter();
 
-  const handleChange = (e:any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e:any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ text: 'Registering...', color: 'text-slate-500' });
@@ -35,7 +35,7 @@ export default function RegisterPage() {
       } else {
         setMessage({ text: data.message, color: 'text-red-600' });
       }
-    } catch (error) {
+    } catch{
       setMessage({ text: 'Registration failed. Please try again.', color: 'text-red-600' });
     } finally {
       setLoading(false);

@@ -1,28 +1,40 @@
-// lib/models/NfcTag.ts (FIXED VERSION)
+// lib/models/NfcTag.ts (CLEANED)
 
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../sequelize'; 
 import { Page } from './Page';
 
 // ----------------------
-// 💡 FIX 1: Make nullable attributes explicitly nullable in the interface.
+// 💡 FIX: Remove unused 'Optional' import
 // ----------------------
+
+// Define the required attributes (TAttributes)
 export interface NfcTagAttributes {
     id: number;
     name: string;
-    tagId: string | null;  // <-- FIXED: tagId can be null before registration
-    pageId: number | null; // <-- FIXED: pageId can be null before assignment
+    tagId: string | null;
+    pageId: number | null; 
 }
 
+// Define the creation attributes (TCreationAttributes)
+// For auto-incrementing fields like 'id', we need to make them optional on creation.
+// We'll also make tagId and pageId optional since they are set *after* the record is created.
+export type NfcTagCreationAttributes = {
+    id?: number; // Primary key is optional on creation
+    name: string;
+    tagId?: string | null;
+    pageId?: number | null;
+};
+
 // ----------------------
-// 💡 FIX 2: Explicitly define the properties on the class body.
-// This often resolves the TypeScript/Sequelize conflict where properties are "missing."
+// 💡 FIX 1: Replace 'any' with the specific creation type
 // ----------------------
-export class NfcTag extends Model<NfcTagAttributes, any> implements NfcTagAttributes { 
+export class NfcTag extends Model<NfcTagAttributes, NfcTagCreationAttributes> implements NfcTagAttributes { 
+    // These properties are required for TypeScript strict mode
     public id!: number;
     public name!: string;
-    public tagId!: string | null;  // <-- FIXED
-    public pageId!: number | null; // <-- FIXED
+    public tagId!: string | null;
+    public pageId!: number | null; 
 }
 
 NfcTag.init(
@@ -38,13 +50,12 @@ NfcTag.init(
         },
         tagId: {
             type: DataTypes.STRING,
-            // 💡 FIX 3: It must be allowNull: true initially since you register the tag later.
-            allowNull: true, 
+            allowNull: true,
             unique: true, 
         },
         pageId: {
             type: DataTypes.INTEGER,
-            allowNull: true, // This was correct, but now matches the interface.
+            allowNull: true,
             references: {
                 model: Page,
                 key: 'id',

@@ -1,7 +1,6 @@
 // app/api/nfc-tags/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { NfcTag } from '@/lib/models/NfcTag'; // Ensure this import is correct
 import db, { initializeDatabase } from '@/lib/db';
+import { NextRequest, NextResponse } from 'next/server';
 
 // POST: Create a new NFC Tag record (initial creation)
 export async function POST(req: NextRequest) {

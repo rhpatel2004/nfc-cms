@@ -1,19 +1,18 @@
 // app/(dashboard)/pages/PageEditor.tsx
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Menu, X, Plus, Trash2, Save } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner'; 
+import { Menu, Plus, Save, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 // DnD Imports
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, arrayMove, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { DndContext, DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 
@@ -282,7 +281,7 @@ export default function PageEditor({ isOpen, setIsOpen, initialPage, onSave }: P
                 const errorData = await res.json();
                 throw new Error(errorData.message || `Failed to ${isNew ? 'create' : 'update'} page.`);
             }
-        } catch (error) {
+        } catch {
             // toast({ 
             //     title: 'API Error', 
             //     description: error instanceof Error ? error.message : "An unknown error occurred.", 

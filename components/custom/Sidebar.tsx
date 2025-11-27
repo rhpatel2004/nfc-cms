@@ -1,12 +1,11 @@
 // components/custom/Sidebar.tsx
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Home, FileText, Scan, GitPullRequest, BarChart2, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { BarChart2, FileText, GitPullRequest, Home, Menu, Scan } from 'lucide-react';
+import Link from 'next/link';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },

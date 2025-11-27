@@ -1,15 +1,14 @@
 // app/(dashboard)/pages/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FileText, Plus, Edit, Trash2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/custom/DataTable'; // Now correctly points to the new file
-import PageEditor from './PageEditor'; 
+import { DataTable } from '@/components/custom/DataTable';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
-import { toast } from 'sonner'; // ✨ UPDATED: Using Sonner's direct toast function
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Edit, FileText, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import PageEditor from './PageEditor';
 
 // Define the type for the data fetched from your API
 interface Page {
@@ -18,6 +17,11 @@ interface Page {
     slug: string;
     content: string; // Stored JSON string
     createdAt: string;
+}
+
+// 💡 NEW: Define the type for the cell render function argument
+interface CellRenderProps {
+    row: { original: Page };
 }
 
 export default function PagesPage() {
@@ -32,7 +36,7 @@ export default function PagesPage() {
             const res = await fetch('/api/pages');
             const data = await res.json();
             setPages(data);
-        } catch (error) {
+        } catch {
             toast.error("Could not load page data from the server.");
         } finally {
             setLoading(false);
@@ -68,6 +72,7 @@ export default function PagesPage() {
         fetchPages();
     }, []);
 
+    // 💡 FIX: Applied CellRenderProps to all cell functions
     const columns = [
         {
             accessorKey: 'name',
@@ -78,18 +83,18 @@ export default function PagesPage() {
             accessorKey: 'slug',
             id: 'slug',
             header: 'Slug',
-            cell: ({ row }: any) => <span className="font-mono text-sm text-blue-600">{`/p/${row.original.slug}`}</span>
+            cell: ({ row }: CellRenderProps) => <span className="font-mono text-sm text-blue-600">{`/p/${row.original.slug}`}</span>
         },
         {
             accessorKey: 'createdAt',
             id: 'createdAt', 
             header: 'Created On',
-            cell: ({ row }: any) => new Date(row.original.createdAt).toLocaleDateString(),
+            cell: ({ row }: CellRenderProps) => new Date(row.original.createdAt).toLocaleDateString(),
         },
         {
             id: 'actions',
             header: 'Actions',
-            cell: ({ row }: any) => (
+            cell: ({ row }: CellRenderProps) => (
                 <div className="flex space-x-2">
                     <Button variant="outline" size="sm" onClick={() => {
                         setEditingPage(row.original);
@@ -142,7 +147,7 @@ export default function PagesPage() {
                         <DataTable columns={columns} data={pages} filterColumn="name" />
                     ) : (
                         <div className="text-center p-10 border rounded-lg text-slate-500">
-                            No pages created yet. Click "Create New Page" to start.
+                            No pages created yet. Click &apos;Create New Page&apos; to start.
                         </div>
                     )}
                 </CardContent>

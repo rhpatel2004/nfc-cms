@@ -1,124 +1,163 @@
-// app/api/nfc-tags/[id]/route.ts (FINAL, RELIABLE VERSION)
+// app/api/nfc-tags/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { NfcTag } from '@/lib/models/NfcTag'; // Ensure this import is correct for casting
-import db, { initializeDatabase } from '@/lib/db';
+import db from '@/lib/db';
+import { initializeDatabase } from '@/lib/db';
+import { Model, ModelStatic } from 'sequelize';
+import { NfcTagAttributes, NfcTagCreationAttributes } from '@/lib/models/NfcTag'; 
+import { PageAttributes } from '@/lib/models/Page';
+import { headers } from 'next/headers'; 
 
-// Define a common type for the context object
-type RouteContext = { params: { id: string } };
+// --- TYPE DEFINITIONS ---
 
+interface ResolvedParams {
+  id: string; 
+}
+type RouteContext = {
+  params: Promise<ResolvedParams>;
+};
+
+// 💡 FIX 1: Define the PageModelStatic using the correct creation type (NOT 'any')
+type PageModelStatic = ModelStatic<Model<PageAttributes, PageAttributes>>; 
+// Note: We use PageAttributes for both generic slots for simplicity and strict typing.
+
+type NfcTagModel = Model<NfcTagAttributes, NfcTagCreationAttributes>; 
+
+// 💡 FIX 2: Define a union type for all successful API responses (eliminates any)
+type NfcTagResponse = 
+    NextResponse<NfcTagAttributes> | // For successful GET request
+    NextResponse<{ message: string }>; // For successful PUT/DELETE request
+
+
+// =================================================================
+// GET Handler
+// =================================================================
+// 💡 FIX 3: Use the fully strict return type (Union of expected successes/failures)
 export async function GET(
-    request: Request,
- { params }: { params: { id: string } }   // 💡 FIX: Use the robust context signature
-) {
-    await initializeDatabase();
+  request: NextRequest,
+  context: RouteContext
+): Promise<NfcTagResponse> { 
+  headers(); 
+  await initializeDatabase();
+  
+  const { id } = await context.params; 
+
+  if (!id || id === 'undefined') {
+    return NextResponse.json({ message: 'Tag ID is missing or invalid.' }, { status: 404 }); 
+  }
+
+  try {
+    const tag: NfcTagModel | null = await db.NfcTag.findOne({
+      where: { id },
+      include: [{
+        // 💡 FIX 4: Apply the strictly typed static model
+        model: db.Page as PageModelStatic,
+        as: 'assignedPage',
+        attributes: ['id', 'name', 'slug', 'content'],
+      }],
+    }); 
     
-    // Access parameter via context
-    const tagId = params.id;  
+    if (!tag) {
+      return NextResponse.json({ message: 'Tag not found' }, { status: 404 });
+    }
+    
+    const tagJson: NfcTagAttributes = tag.toJSON() as NfcTagAttributes;
 
-    if (!tagId || tagId === 'undefined') {
-        // This prevents the crash by correctly returning 404 for unresolved paths
-        return NextResponse.json({ message: 'Tag ID is missing or invalid.' }, { status: 404 }); 
-    }
+    return NextResponse.json(tagJson, { status: 200 });
+    
+  } catch (error) {
+    console.error("Error fetching single tag:", error);
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 }
+    );
+  }
+}
 
 
-    try {
-        const tag = await db.NfcTag.findOne({
-            where: { id: tagId },
-            include: [{
-                model: db.Page,
-                as: 'assignedPage',
-                attributes: ['id', 'name', 'slug', 'content'], 
-            }],
-        });
+// =================================================================
+// PUT Handler
+// =================================================================
+// 💡 FIX 5: Use the fully strict return type (Union of expected successes/failures)
+export async function PUT(
+  req: NextRequest, 
+  context: RouteContext
+): Promise<NfcTagResponse> {
+  await initializeDatabase();
+  
+  const { id: urlId } = await context.params; 
+  
+  if (!urlId || urlId === 'undefined') {
+    return NextResponse.json({ message: 'Tag ID is missing.' }, { status: 404 }); 
+  }
 
-        if (!tag) {
-            return NextResponse.json({ message: 'Tag not found' }, { status: 404 });
-        }
+  try {
+    const body: Record<string, string | number | undefined> = await req.json();
+    const { name, pageId, tagId: newTagId } = body;
 
-        return NextResponse.json(tag, { status: 200 });
-    } catch (error) {
-        console.error("Error fetching single tag:", error);
+
+    const tag: NfcTagModel | null = await db.NfcTag.findByPk(urlId); 
+    if (!tag) {
+      return NextResponse.json({ message: 'NFC Tag not found.' }, { status: 404 });
+    }
+
+    const updateData: Record<string, string | number | null | undefined> = {}; 
+    if (name !== undefined) updateData.name = name;
+    if (newTagId !== undefined) updateData.tagId = newTagId;
+    if (pageId !== undefined) updateData.pageId = pageId; 
+
+    if (newTagId && newTagId !== tag.get('tagId')) {
+      const existingTag: NfcTagModel | null = await db.NfcTag.findOne({ where: { tagId: newTagId } });
+      if (existingTag && existingTag.get('id') !== tag.get('id')) {
         return NextResponse.json(
-            { message: 'Internal Server Error' },
-            { status: 500 }
+          { message: 'This physical card is already registered to another tag record.' }, 
+          { status: 409 }
         );
+      }
     }
-}
-
-// =================================================================
-// PUT Handler (Update Tag)
-// =================================================================
-
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    await initializeDatabase();
     
-    // Access parameter via context
-    const tagId = params.id;
-
-    if (!tagId || tagId === 'undefined') {
-        // This handles the spurious 'undefined' requests from the Next.js runtime
-        return NextResponse.json({ message: 'Tag ID is missing.' }, { status: 404 }); 
-    }
-
-    try {
-        const { name, pageId, tagId: newTagId } = await req.json();
-
-        // Find by the ID from the URL (tagId)
-        const tag = (await db.NfcTag.findByPk(tagId)) as NfcTag | null; 
-
-        if (!tag) {
-            return NextResponse.json({ message: 'NFC Tag not found.' }, { status: 404 });
-        }
-
-        const updateData: any = {};
-        if (name !== undefined) updateData.name = name;
-        if (newTagId !== undefined) updateData.tagId = newTagId; // Use newTagId from body
-        if (pageId !== undefined) updateData.pageId = pageId;
-
-        // Check for unique tagId before updating
-        if (newTagId && newTagId !== tag.tagId) { 
-            const existingTag = await db.NfcTag.findOne({ where: { tagId: newTagId } });
-            if (existingTag && existingTag.id !== tag.id) {
-                return NextResponse.json({ message: 'This physical card is already registered to another tag record.' }, { status: 409 });
-            }
-        }
-        
-        await tag.update(updateData);
-        
-        return NextResponse.json({ message: 'NFC Tag updated successfully.' }, { status: 200 });
-    } catch (error) {
-        console.error("Error updating tag:", error);
-        return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
-    }
+    await tag.update(updateData);
+    
+    return NextResponse.json({ message: 'NFC Tag updated successfully.' }, { status: 200 });
+  } catch (error) {
+    console.error("Error updating tag:", error);
+    return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
+  }
 }
 
+
+// =================================================================
+// DELETE Handler
+// =================================================================
+// 💡 FIX 6: Use the fully strict return type (Union of expected successes/failures)
 export async function DELETE(
-    request: NextRequest, 
-    { params }: { params: { id: string } }
-) {
-    await initializeDatabase();
-    const tagId = params.id;
+  request: NextRequest, 
+  context: RouteContext
+): Promise<NfcTagResponse> {
+  await initializeDatabase();
+  
+  const { id } = await context.params; 
 
-    if (!tagId || tagId === 'undefined') {
-        return NextResponse.json({ message: 'Tag ID is missing.' }, { status: 400 });
+  if (!id || id === 'undefined') {
+    return NextResponse.json({ message: 'Tag ID is missing.' }, { status: 400 });
+  }
+
+  try {
+    const tag: NfcTagModel | null = await db.NfcTag.findByPk(id); 
+
+    if (!tag) {
+      return NextResponse.json({ message: 'NFC Tag not found.' }, { status: 404 });
     }
 
-    try {
-        const tag = await db.NfcTag.findByPk(tagId);
-
-        if (!tag) {
-            return NextResponse.json({ message: 'NFC Tag not found.' }, { status: 404 });
-        }
-
-        await tag.destroy();
-        
-        return NextResponse.json({ message: 'NFC Tag deleted successfully.' }, { status: 200 });
-    } catch (error) {
-        console.error("Error deleting tag:", error);
-        return NextResponse.json(
-            { message: 'An internal server error occurred during deletion.' },
-            { status: 500 }
-        );
-    }
+    await tag.destroy();
+    
+    return NextResponse.json({ message: 'NFC Tag deleted successfully.' }, { status: 200 });
+  } catch (error) {
+    console.error("Error deleting tag:", error);
+    return NextResponse.json(
+      { message: 'An internal server error occurred during deletion.' },
+      { status: 500 }
+    );
+ 
+}
 }

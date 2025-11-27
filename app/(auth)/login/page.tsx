@@ -13,11 +13,11 @@ export default function LoginPage() {
   const [message, setMessage] = useState({ text: '', color: '' });
   const router = useRouter();
 
-  const handleChange = (e:any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e:any) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setMessage({ text: 'Logging in...', color: 'text-slate-500' });
@@ -35,7 +35,7 @@ export default function LoginPage() {
       } else {
         setMessage({ text: data.message, color: 'text-red-600' });
       }
-    } catch (error) {
+    } catch {
       setMessage({ text: 'Login failed. Please try again.', color: 'text-red-600' });
     } finally {
       setLoading(false);
@@ -63,7 +63,7 @@ export default function LoginPage() {
         </p>
       )}
       <div className="mt-4 text-center text-sm">
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/register" className="font-medium text-slate-900 dark:text-slate-100 hover:underline">
           Register
         </Link>

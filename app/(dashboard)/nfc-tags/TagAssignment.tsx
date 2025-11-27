@@ -41,7 +41,7 @@ export const TagAssignment: React.FC<TagAssignmentProps> = ({
                 const res = await fetch('/api/pages');
                 const data: Page[] = await res.json();
                 setPages(data);
-            } catch (error) {
+            } catch{
                 toast.error("Failed to load content pages.");
             }
         };

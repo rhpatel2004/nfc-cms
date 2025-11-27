@@ -1,21 +1,23 @@
-// components/custom/DataTable.tsx (UPDATED)
-import React, { ReactNode } from 'react'; // <-- Import ReactNode
+// components/custom/DataTable.tsx
+import React, { ReactNode } from 'react'; 
 
-// Defines the universal Column structure
-export interface DataTableColumn {
-  accessorKey?: string; // Made optional to allow columns like 'actions'
-  id: string; // Add 'id' as a required key for all columns (or fall back to accessorKey)
+// 1. Define the Column structure using a generic <T> for the row data type
+export interface DataTableColumn<T extends object> {
+  accessorKey?: keyof T | string; 
+  id: string; 
   header: string;
-  cell?: (props: { row: { original: any } }) => ReactNode; // Use ReactNode for flexibility
+  cell?: (props: { row: { original: T } }) => ReactNode; 
 }
 
-interface DataTableProps {
-  columns: DataTableColumn[]; // Use the new interface
-  data: any[];
-  filterColumn: string;
+// 2. Define the Props structure using the same generic <T>
+interface DataTableProps<T extends object> {
+  columns: DataTableColumn<T>[]; 
+  data: T[]; 
+  filterColumn: keyof T | string; 
 }
 
-export const DataTable: React.FC<DataTableProps> = ({ data, columns }) => {
+// 3. Apply the generic <T> to the functional component itself
+export const DataTable = <T extends object>({ data, columns }: DataTableProps<T>) => {
 
   if (data.length === 0) {
     return <p className="text-center text-slate-500 py-4">No data to display.</p>;
@@ -28,8 +30,8 @@ export const DataTable: React.FC<DataTableProps> = ({ data, columns }) => {
           <tr>
             {columns.map(column => (
               <th 
-                // Use column.id here, falling back to accessorKey if needed
-                key={column.id || column.accessorKey} 
+                // Ensure key is a string
+                key={column.id || String(column.accessorKey)} 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
                 {column.header}
@@ -39,17 +41,19 @@ export const DataTable: React.FC<DataTableProps> = ({ data, columns }) => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {data.map((row, rowIndex) => (
+            // Use rowIndex for the row key
             <tr key={rowIndex} className="hover:bg-gray-50">
               {columns.map(column => (
                 <td 
-                  // Use column.id here, falling back to accessorKey if needed
-                  key={column.id || column.accessorKey} 
+                  // Use a combined string for cell key
+                  key={`${rowIndex}-${column.id || String(column.accessorKey)}`} 
                   className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                 >
-                  {/* Access data using accessorKey or just render cell content */}
+                  {/* 💡 FIX: Explicitly check for cell function, otherwise render the string representation */}
                   {column.cell 
                     ? column.cell({ row: { original: row } }) 
-                    : row[column.accessorKey!]} 
+                    // Safely convert the data value to ReactNode (string/number)
+                    : String(row[column.accessorKey as keyof T])} 
                 </td>
               ))}
             </tr>

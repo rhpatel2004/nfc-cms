@@ -1,5 +1,7 @@
 // components/cms/componentTypes.ts
 
+// NOTE: Ensure this file is accessible by your components
+
 export type ComponentType = 'HeroSection' | 'TextBlock' | 'Spacer';
 
 export interface HeroSectionData {
@@ -11,7 +13,7 @@ export interface HeroSectionData {
 
 export interface TextBlockData {
   type: 'TextBlock';
-  content: string; // Rich text content (simplified for now)
+  content: string; // Rich text content (HTML/Markdown)
 }
 
 export interface SpacerData {

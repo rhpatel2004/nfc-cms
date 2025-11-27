@@ -1,8 +1,10 @@
 // lib/models/Page.ts
-import { DataTypes, Model, Optional } from 'sequelize';
-import db from '../db';
-import { sequelize } from '../sequelize'; 
 
+import { DataTypes, Model } from 'sequelize'; // 💡 FIX 1: Removed unused 'Optional'
+import { sequelize } from '../sequelize'; 
+// 💡 FIX 2: Removed unused import 'db'
+
+// Define the required attributes (TAttributes)
 export interface PageAttributes {
     id: number;
     name: string;
@@ -10,7 +12,23 @@ export interface PageAttributes {
     content: string;
 }
 
-export class Page extends Model<PageAttributes, any> { }
+// Define the creation attributes (TCreationAttributes)
+// 'id' is optional because it's auto-incrementing.
+type PageCreationAttributes = {
+    id?: number; 
+    name: string;
+    slug: string;
+    content: string;
+};
+
+// 💡 FIX 3: Replaced 'any' with the specific creation type
+export class Page extends Model<PageAttributes, PageCreationAttributes> implements PageAttributes { 
+    // Properties must be explicitly defined for TypeScript strict mode
+    public id!: number;
+    public name!: string;
+    public slug!: string;
+    public content!: string;
+}
 
 Page.init(
     {
